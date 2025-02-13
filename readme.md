@@ -21,7 +21,29 @@ Create a `config.json`` file and fill in the required info:
 Create a `configs` folder in which you can create a config per api, example `./configs/pcm-v4-api.json`
 ```json
 {
-
+  "name": "example-api-v1",
+  "base_url": "https://api.example.com/v1",
+  "default_options": {
+    "check_data": true,
+    "check_status": "success",
+    "check_status_code": 200,
+    "check_checksum": true
+  },
+  "controllers": {
+    "data/attributes": {
+      "check_length": 200,
+      "check_execution_time": 100,
+      "check_object_name": "attributes",
+      "check_object_properties": [
+        "id",
+        "attribute",
+        "group",
+        "name",
+        "name.nl",
+        "name.fr"
+      ]
+    }
+  }
 }
 ```
 

@@ -2,7 +2,7 @@
 
 ## Usage
 Create a `config.json`` file and fill in the required info:
-```json
+```jsonc
 {
   "betteruptime": {
     "create_incident": true, // enable automatic incident creation in betterstack
@@ -19,7 +19,7 @@ Create a `config.json`` file and fill in the required info:
 }
 ```
 Create a `configs` folder in which you can create a config per api, example `./configs/pcm-v4-api.json`
-```json
+```jsonc
 {
   "name": "example-api-v1",
   "base_url": "https://api.example.com/v1",
@@ -49,7 +49,7 @@ Create a `configs` folder in which you can create a config per api, example `./c
 
 ### Expected API result
 By default we expect the followinf results from the API:
-```json
+```jsonc
 {
   "status": "success",
   "code": 200,
@@ -63,7 +63,7 @@ By default we expect the followinf results from the API:
 ```
 `data` can also be aan array, in which case the length will be based on the array length of data.  
 Other response formats are also supported but will have to be declared in full, example in config (not yet implemented):
-```json
+```jsonc
 {
   "name": ...,
   "controllers": {

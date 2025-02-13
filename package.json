@@ -1,0 +1,11 @@
+{
+  "name": "api-tests-betteruptime",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "scripts": {},
+  "author": "Jamie Vangeysel",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

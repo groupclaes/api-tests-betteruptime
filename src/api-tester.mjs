@@ -30,8 +30,6 @@ export default class APITester {
         summary: err?.message
       }
     } finally {
-      let incident
-
       if (Object.keys(errors).some(k => errors[k].length > 0)) {
         // create incident for all errors
         let controllers_with_errors = Object.keys(errors).filter(k => errors[k].length > 0)
@@ -87,7 +85,10 @@ export default class APITester {
       if (options.check_data && (!d || !d.data))
         errors.push(`no data retuned!`)
 
-      if (options.check_status && !d.status === options.check_status)
+      if (options.check_status_code && r.status !== options.check_status_code)
+        errors.push(`did not return status code '${options.check_status}', (actual): ${r.status})!`)
+
+      if (options.check_status && d.status !== options.check_status)
         errors.push(`did not return status '${options.check_status}'!`)
 
       if (options.check_execution_time && d.executionTime >= options.check_execution_time)
@@ -95,6 +96,9 @@ export default class APITester {
 
       if (options.check_checksum && !d.checksum && !d.data?.checksum)
         errors.push(`returned no checksum value!`)
+
+      if (options.check_response_body)
+        errors.push('option check_response_body is not yet implemented!')
 
       if (Array.isArray(d.data)) {
         if (options.check_length && d.data.length < options.check_length)

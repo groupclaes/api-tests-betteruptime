@@ -27,7 +27,7 @@ Create a `configs` folder in which you can create a config per api, example `./c
     "check_data": true,
     "check_status": "success",
     "check_status_code": 200,
-    "check_checksum": true
+    "check_checksum": true // check if result contains property checksum or data.checksum and resends the request with provided checksum in querystring, the result should be 204
   },
   "controllers": {
     "data/attributes": {

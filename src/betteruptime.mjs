@@ -1,10 +1,18 @@
 export class BetterUptime {
   _fetch
+  _logger
   _config
   _token
 
-  constructor(fetch, config) {
+  /**
+   * 
+   * @param {fetch} fetch 
+   * @param {import('pino').Logger} logger 
+   * @param {any} config 
+   */
+  constructor(fetch, logger, config) {
     this._fetch = fetch
+    this._logger = logger
     this._config = config
     this._token = config.token
   }
@@ -46,7 +54,7 @@ export class BetterUptime {
    */
   async create_incidents(incidents) {
     if (this._config.create_grouped_incident) {
-      console.error('Creating a grouped incident is not implemented, falling back to multiple incidents...')
+      this._logger.error('Creating a grouped incident is not implemented, falling back to multiple incidents...')
     }
 
     for (let incident of incidents) {
@@ -57,8 +65,8 @@ export class BetterUptime {
   async heartbeat() {
     if (this._config.heartbeat) {
       await this._fetch('https://uptime.betterstack.com/api/v1/heartbeat/' + this._config.heartbeat, { method: 'HEAD' })
-        .catch(_ => console.error('Error while sending heartbeat request to betteruptime!'))
-      console.debug('Heartbeat request send to betteruptime!')
+        .catch(_ => this._logger.error('Error while sending heartbeat request to betteruptime!'))
+      this._logger.debug('Heartbeat request send to betteruptime!')
     }
   }
 }

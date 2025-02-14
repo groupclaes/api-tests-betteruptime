@@ -1,9 +1,17 @@
 export default class APITester {
   _fetch
+  _logger
   _config
 
-  constructor(fetch, config) {
+  /**
+   * 
+   * @param {fetch} fetch 
+   * @param {import('pino').Logger} logger 
+   * @param {any} config 
+   */
+  constructor(fetch, logger, config) {
     this._fetch = fetch
+    this._logger = logger
     this._config = config
   }
 
@@ -33,7 +41,7 @@ export default class APITester {
       if (Object.keys(errors).some(k => errors[k].length > 0)) {
         // create incident for all errors
         let controllers_with_errors = Object.keys(errors).filter(k => errors[k].length > 0)
-        console.debug('controllers_with_errors: ', controllers_with_errors)
+        this._logger.debug('controllers_with_errors: ', controllers_with_errors)
         let description = '', summary = ''
         if (controllers_with_errors.length > 1) {
           summary = 'Detected error(s) in multiple controllers'
@@ -53,7 +61,7 @@ export default class APITester {
           }
         }
         description = description.trimEnd()
-        console.debug('Creating incident with description: %s', description)
+        this._logger.debug('Creating incident with description: %s', description)
 
         return {
           name: this._config.name,
@@ -76,11 +84,11 @@ export default class APITester {
 
     try {
       let url = options.user_id !== undefined ? `${controller}?uid=${options.user_id}` : controller
-      // console.debug('url: %s', url)
+      // this._logger.debug('url: %s', url)
       const r = await this.get(url)
       const d = await r.json()
 
-      // console.debug(controller, d)
+      // this._logger.debug(controller, d)
 
       if (options.check_data && (!d || !d.data))
         errors.push(`no data retuned!`)
@@ -90,6 +98,9 @@ export default class APITester {
 
       if (options.check_status && d.status !== options.check_status)
         errors.push(`did not return status '${options.check_status}'!`)
+
+      if (d.executionTime)
+        this._logger.info({ execution_time: d.executionTime, endpoint: `${this._config.base_url}/${controller}` }, 'execution info')
 
       if (options.check_execution_time && d.executionTime >= options.check_execution_time)
         errors.push(`execution took longer than ${options.check_execution_time}ms (actual: ${d.executionTime.toFixed(2)}ms) which is unusual!`)
@@ -109,7 +120,7 @@ export default class APITester {
           const m = checkMissingProps(o, options.check_object_properties)
           if (m.length > 0) {
             errors.push(`object in response is invallid, missing properties: ${JSON.stringify(m)}`)
-            console.warn(controller, o)
+            this._logger.warn(controller, o)
           }
         }
       } else {
@@ -123,7 +134,7 @@ export default class APITester {
               const m = checkMissingProps(o, options.check_object_properties)
               if (m.length > 0) {
                 errors.push(`object in response is invallid, missing properties: ${JSON.stringify(m)}`)
-                console.warn(options.check_object_name, o)
+                this._logger.warn(options.check_object_name, o)
               }
             }
           } else {

@@ -1,9 +1,15 @@
 import fs from 'fs'
+import path from 'path'
+import pino from 'pino'
 
 import { BetterUptime } from './betteruptime.mjs'
-import path from 'path'
 import APITester from './api-tester.mjs'
-import { error } from 'console'
+
+/**
+ * @type {import('pino').Logger}
+ */
+let logger
+let loggingConfig = { level: 'info' }
 
 async function main() {
   let betteruptime
@@ -14,14 +20,21 @@ async function main() {
     config = await load_config()
     fetch = await load_fetch()
 
-    if (config && config.betteruptime)
-      betteruptime = new BetterUptime(fetch, config.betteruptime)
-    else
-      console.error(`Missing configuration for betteruptime, 'token' is a required!`)
+    if (config && config.betteruptime) {
+      if (config.betteruptime.logtail)
+        logger = pino(loggingConfig, pino.transport({
+          target: "@logtail/pino",
+          options: config.betteruptime.logtail
+        }))
+      else logger = pino(loggingConfig)
 
-    incidents = await process(fetch)
+      betteruptime = new BetterUptime(fetch, logger, config.betteruptime)
+    } else
+      logger?.error(`Missing configuration for betteruptime, 'token' is a required!`)
+
+    incidents = await process(fetch, logger)
   } catch (err) {
-    console.error(err)
+    logger?.error(err)
   } finally {
     if (betteruptime) {
       if (config.betteruptime.create_incident)
@@ -57,7 +70,7 @@ async function load_config() {
   }
 }
 
-async function process(fetch) {
+async function process(fetch, logger) {
   let incidents = []
 
   // get all configurations declared in the 'config' folder and run checks
@@ -66,14 +79,14 @@ async function process(fetch) {
     // check if file ext is json, then try to parse config
     if (path.parse(file.name).ext === '.json') {
       const file_config = JSON.parse(fs.readFileSync('./configs/' + file.name, { encoding: 'utf-8' }))
-      const tester = new APITester(fetch, file_config)
+      const tester = new APITester(fetch, logger, file_config)
       const incident = await tester.test()
       if (incident)
         incidents.push(incident)
       else
-        console.debug('No incident for %s', file.name)
+        logger.debug('No incident for %s', file.name)
     } else {
-      console.warn('unsupported config file found in configs; %s')
+      logger.warn('unsupported config file found in configs; %s')
     }
   }
 

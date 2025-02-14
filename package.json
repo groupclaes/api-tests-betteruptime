@@ -6,6 +6,8 @@
   "author": "Jamie Vangeysel",
   "license": "ISC",
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "@logtail/pino": "^0.5.2",
+    "node-fetch": "^3.3.2",
+    "pino": "^9.6.0"
   }
 }

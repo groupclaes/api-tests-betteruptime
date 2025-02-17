@@ -100,7 +100,7 @@ export default class APITester {
         errors.push(`did not return status '${options.check_status}'!`)
 
       if (d.executionTime)
-        this._logger.info({ execution_time: d.executionTime, endpoint: `${this._config.base_url}/${controller}` }, 'execution info')
+        this._logger.info({ execution_time: d.executionTime, endpoint: `${this._config.base_url}/${controller}` }, `execution info for '${this._config.base_url}/${controller}'`)
 
       if (options.check_execution_time && d.executionTime >= options.check_execution_time)
         errors.push(`execution took longer than ${options.check_execution_time}ms (actual: ${d.executionTime.toFixed(2)}ms) which is unusual!`)

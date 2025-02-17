@@ -29,8 +29,11 @@ async function main() {
       else logger = pino(loggingConfig)
 
       betteruptime = new BetterUptime(fetch, logger, config.betteruptime)
-    } else
+    } else {
+      if (!logger)
+        logger = pino(loggingConfig)
       logger?.error(`Missing configuration for betteruptime, 'token' is a required!`)
+    }
 
     incidents = await process(fetch, logger)
   } catch (err) {
@@ -41,6 +44,10 @@ async function main() {
         if (incidents.length > 0)
           await betteruptime.create_incidents(incidents)
       await betteruptime.heartbeat()
+    } else {
+      logger?.debug('completed API checks')
+      if (incidents.length > 0)
+        logger?.warn('incidents found!', incidents)
     }
   }
 }

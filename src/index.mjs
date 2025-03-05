@@ -27,6 +27,7 @@ async function main() {
           options: config.betteruptime.logtail
         }))
       else logger = pino(loggingConfig)
+      logger.level = 'debug'
 
       betteruptime = new BetterUptime(fetch, logger, config.betteruptime)
     } else {
@@ -40,9 +41,12 @@ async function main() {
     logger?.error(err)
   } finally {
     if (betteruptime) {
-      if (config.betteruptime.create_incident)
-        if (incidents.length > 0)
+      if (incidents.length > 0) {
+        if (config.betteruptime.create_incident)
           await betteruptime.create_incidents(incidents)
+        else
+          logger?.warn({ incidents }, 'incidents found!')
+      }
       await betteruptime.heartbeat()
     } else {
       logger?.debug('completed API checks')
@@ -86,14 +90,16 @@ async function process(fetch, logger) {
     // check if file ext is json, then try to parse config
     if (path.parse(file.name).ext === '.json') {
       const file_config = JSON.parse(fs.readFileSync('./configs/' + file.name, { encoding: 'utf-8' }))
+      logger.warn('Creating tester for file %s', file.name)
       const tester = new APITester(fetch, logger, file_config)
+      logger.warn('Starting tester for file %s', file.name)
       const incident = await tester.test()
       if (incident)
         incidents.push(incident)
       else
         logger.debug('No incident for %s', file.name)
     } else {
-      logger.warn('unsupported config file found in configs; %s')
+      logger.warn('unsupported config file found in configs; %s', file.name)
     }
   }
 

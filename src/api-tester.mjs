@@ -3,6 +3,8 @@ export default class APITester {
   _logger
   _config
 
+  _auth
+
   /**
    * 
    * @param {fetch} fetch 
@@ -16,13 +18,27 @@ export default class APITester {
   }
 
   async test() {
+    this._logger.debug('test() -- start')
     let errors = {}
 
     try {
-      // run all tests a first time to ensure the second run ignores potential start-up delay
-      for (let controller of Object.keys(this._config.controllers)) {
-        await this.test_controller(controller, {})
+      // if jwt authentication is enabled request a new access_token for client
+      if (this._config.request_jwt) {
+        this._logger.debug('request_jwt is set, trying to reques a new access_token...', { config: this._config.request_jwt })
+        const res = await request_access_token(this._fetch, this._config.request_jwt)
+        if (res) {
+          const jwt = await res.json()
+          this._auth = {
+            type: jwt.token_type,
+            token: jwt.access_token
+          }
+        }
       }
+
+      // run all tests a first time to ensure the second run ignores potential start-up delay
+      // for (let controller of Object.keys(this._config.controllers)) {
+      //   await this.test_controller(controller, {})
+      // }
 
       for (let controller of Object.keys(this._config.controllers)) {
         const config = {
@@ -88,7 +104,7 @@ export default class APITester {
       const r = await this.get(url)
       const d = await r.json()
 
-      // this._logger.debug(controller, d)
+      // this._logger.debug({ response: d }, controller)
 
       if (options.check_data && (!d || !d.data))
         errors.push(`no data retuned!`)
@@ -130,7 +146,7 @@ export default class APITester {
         if (options.check_object_name) {
           if (d.data[options.check_object_name]) {
             if (options.check_object_properties) {
-              let o = d.data[options.check_object_name][0]
+              let o = Array.isArray(d.data[options.check_object_name]) ? d.data[options.check_object_name][0] : d.data[options.check_object_name]
               const m = checkMissingProps(o, options.check_object_properties)
               if (m.length > 0) {
                 errors.push(`object in response is invallid, missing properties: ${JSON.stringify(m)}`)
@@ -164,8 +180,18 @@ export default class APITester {
    * @returns {Promise<Response>}
    */
   async get(url) {
+    if (this._auth)
+      return this._fetch(`${this._config.base_url}/${url}`, {
+        headers: {
+          'Authorization': this._auth.type + ' ' + this._auth.token
+        }
+      })
     return this._fetch(`${this._config.base_url}/${url}`)
   }
+}
+
+async function request_access_token(fetch, config) {
+  return fetch(config.endpoint)
 }
 
 /**

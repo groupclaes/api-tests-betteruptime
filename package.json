@@ -9,5 +9,9 @@
     "@logtail/pino": "^0.5.2",
     "node-fetch": "^3.3.2",
     "pino": "^9.6.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.8",
+    "@types/node": "^22.19.10"
   }
 }

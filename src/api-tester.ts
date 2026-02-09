@@ -1,7 +1,10 @@
+import { Logger } from 'pino'
+import { writeFileSync } from 'node:fs'
+
 export default class APITester {
   _fetch
-  _logger
-  _config
+  _logger: Logger
+  _config: any
 
   _auth
 
@@ -24,18 +27,18 @@ export default class APITester {
     try {
       // if jwt authentication is enabled request a new access_token for client
       if (this._config.request_jwt) {
-        this._logger.debug({ config: this._config.request_jwt }, 'request_jwt is set, trying to reques a new access_token...')
-        const res = await request_access_token(this._fetch, this._config.request_jwt)
-        if (res) {
+        this._logger.debug('request_jwt is set, trying to request a new access_token...', { config: this._config.request_jwt })
+        const res = await requestAccessToken(this._fetch, this._config.request_jwt)
+        if (res.ok) {
+          writeFileSync('./request_jwt.log', res.headers.raw()['set-cookie'].join(''))
           const jwt = await res.json()
-          console.trace(jwt)
           this._auth = {
             type: jwt.token_type,
             token: jwt.access_token
           }
         } else {
-          this._logger.error('request_jwt returned no response!')
-          throw new Error('request_jwt returned no response!')
+          this._logger.error(`Error while requesting access token: HTTP Error Response: ${res.status} ${res.statusText}`)
+          throw new Error(`Error while requesting access token: HTTP Error Response: ${res.status} ${res.statusText}`)
         }
       }
 
@@ -176,15 +179,15 @@ export default class APITester {
               }
             }
           } else {
-            errors.push(`object ${check_object_name} not found in data!`)
+            errors.push(`object ${options.check_object_name} not found in data!`)
           }
         }
       }
 
       if (options.check_checksum && (d.data?.checksum || d.checksum)) {
         let check_url = url + (url.includes('?') ? '&' : '?') + 'checksum=' + (d.checksum ?? d.data.checksum)
-        const x = await this.get(check_url)
-        if (!x.status === 204) {
+        const x: any = await this.get(check_url)
+        if (x.status !== 204) {
           errors.push(`should return 204 when providing the current checksum!`)
         }
       }
@@ -215,8 +218,21 @@ export default class APITester {
   }
 }
 
-async function request_access_token(fetch, config) {
-  return fetch(config.endpoint)
+function toUrlEncoded(obj) {
+  return Object.keys(obj).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(obj[k])).join('&')
+}
+
+async function requestAccessToken(fetch, config) {
+  if (config.body) {
+    console.log(config.endpoint, toUrlEncoded(config.body))
+    return fetch(config.endpoint, {
+      method: 'POST',
+      Headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toUrlEncoded(config.body)
+    })
+  } else {
+    return fetch(config.endpoint)
+  }
 }
 
 /**

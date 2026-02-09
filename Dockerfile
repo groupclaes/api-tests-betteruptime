@@ -7,7 +7,7 @@ COPY .npmrc ./.npmrc
 
 RUN npm install --omit=dev --ignore-scripts
 
-FROM groupclaes/node:22 AS release
+FROM groupclaes/bun AS release
 USER node
 WORKDIR /usr/src/app
 
@@ -15,4 +15,4 @@ COPY --from=deps /usr/src/app ./
 COPY ./src ./
 
 # command to run when intantiate an image
-CMD ["node","./index.mjs"]
+CMD ["bum",'--bun',"./index.ts"]
